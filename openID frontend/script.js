@@ -1,7 +1,7 @@
 let button = document.querySelector("button");
 
 const clientId = "475216737217-nv9trlpu0q8qliqnp29kbjne3iupulva.apps.googleusercontent.com";
-const redirectUrl = "http://127.0.0.1:5500/callback.html";
+const redirectUrl = "http://127.0.0.1:3000/get-code";
 
 button.addEventListener("click", (event) => {
     window.open(
@@ -12,18 +12,8 @@ button.addEventListener("click", (event) => {
 });
 
 window.addEventListener("message", async (e) => {
-    let res = await fetch("http://127.0.0.1:3000/sent-code", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code: e.data }),
-    });
-    let { data, isLogin } = await res.json()
+    let { data, isLogin } = e.data
     if (isLogin) {
         window.location = '/profile'
     }
-
-
 });

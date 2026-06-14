@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from 'cors'
 import cookieParser from 'cookie-parser';
@@ -7,8 +8,8 @@ const PORT = process.env.PORT || 3000;
 import userDB from "./userDB.json" with { type: "json" };
 import sessionDB from "./sessionDB.json" with { type: "json" };
 import fs from 'node:fs/promises';
-import dotenv from "dotenv";
-dotenv.config({quiet:false});
+
+dotenv.config();
 
 app.use(express.json())
 app.use(cookieParser())
@@ -47,19 +48,20 @@ app.post('/logout', async (req, res, next) => {
     }
 })
 
-app.post('/sent-code', async (req, res) => {
-    let { sid } = req.cookies
-    let { code } = req.body
+app.get('/get-code', async (req, res) => {
+    let code = req.query.code
+
     let { sub, email, name, picture } = await loginWithGoogle(code)
 
     let existingSession = sessionDB.find(({ id, uid }) => uid == sub)
 
     if (existingSession) {
-        res.cookie('sid', existingSession.id, {
-            maxAge: 1000 * 60 * 60 * 24,
-            httpOnly: true,
-        })
-        return res.json({ data: existingSession, isLogin: true });
+        // res.cookie('sid', existingSession.id, {
+        //     maxAge: 1000 * 60 * 60 * 24,
+        //     httpOnly: true,
+        // })
+        res.redirect(`http://127.0.0.1:5500/callback.html?sid=${existingSession.id}`)
+        // return res.json({ data: existingSession, isLogin: true });
     }
 
 
@@ -68,11 +70,12 @@ app.post('/sent-code', async (req, res) => {
         let id = crypto.randomUUID()
         sessionDB.push({ id, uid: sub })
         await fs.writeFile('./sessionDB.json', JSON.stringify(sessionDB, null, 2))
-        res.cookie('sid', id, {
-            maxAge: 1000 * 60 * 60 * 24,
-            httpOnly: true,
-        })
-        return res.json({ data: existingUser, isLogin: true });
+        // res.cookie('sid', id, {
+        //     maxAge: 1000 * 60 * 60 * 24,
+        //     httpOnly: true,
+        // })
+        res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`)
+        // return res.json({ data: existingUser, isLogin: true });
     }
 
 
@@ -86,26 +89,88 @@ app.post('/sent-code', async (req, res) => {
     sessionDB.push(createdSession)
     await fs.writeFile('./sessionDB.json', JSON.stringify(sessionDB, null, 2))
 
-    res.cookie('sid', id, {
-        maxAge: 1000 * 60 * 60 * 24,
-        httpOnly: true,
-    })
+    // res.cookie('sid', id, {
+    //     maxAge: 1000 * 60 * 60 * 24,
+    //     httpOnly: true,
+    // })
 
-    res.json({ data: createdSession, isLogin: true })
+    res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`)
+    // res.json({ data: createdSession, isLogin: true })
 
-});
-
-
-app.use((err, req, res, next) => {
-    if (!err.message) {
-        return res.status(err.statusCode || 500).json(err)
-    }
-    return res.status(500).json({ data: 'Server Internal error 🤯', isLogin: false })
-    console.log(err.message);
 
 })
 
+app.get('/set-session-cookie', (req, res) => {
+    let { sid } = req.query
+    res.cookie('sid', sid, {
+        maxAge: 1000 * 60 * 60 * 24,
+        httpOnly: true,
+    })
+    res.end()
+
+})
+
+// app.post('/sent-code', async (req, res) => {
+//     let { sid } = req.cookies
+//     let { code } = req.body
+
+//     let { sub, email, name, picture } = await loginWithGoogle(code)
+
+//     let existingSession = sessionDB.find(({ id, uid }) => uid == sub)
+
+//     if (existingSession) {
+//         res.cookie('sid', existingSession.id, {
+//             maxAge: 1000 * 60 * 60 * 24,
+//             httpOnly: true,
+//         })
+//         return res.json({ data: existingSession, isLogin: true });
+//     }
+
+
+//     let existingUser = userDB.find(({ id }) => id === sub)
+//     if (existingUser) {
+//         let id = crypto.randomUUID()
+//         sessionDB.push({ id, uid: sub })
+//         await fs.writeFile('./sessionDB.json', JSON.stringify(sessionDB, null, 2))
+//         res.cookie('sid', id, {
+//             maxAge: 1000 * 60 * 60 * 24,
+//             httpOnly: true,
+//         })
+//         return res.json({ data: existingUser, isLogin: true });
+//     }
+
+
+//     let createdUser = { id: sub, email, name, picture }
+//     userDB.push(createdUser)
+//     await fs.writeFile('./userDB.json', JSON.stringify(userDB, null, 2))
+
+//     let id = crypto.randomUUID()
+
+//     let createdSession = { id, uid: sub }
+//     sessionDB.push(createdSession)
+//     await fs.writeFile('./sessionDB.json', JSON.stringify(sessionDB, null, 2))
+
+//     res.cookie('sid', id, {
+//         maxAge: 1000 * 60 * 60 * 24,
+//         httpOnly: true,
+//     })
+
+//     res.json({ data: createdSession, isLogin: true })
+
+// });
+
+
+// app.use((err, req, res, next) => {
+//     if (!err.message) {
+//         return res.status(err.statusCode || 500).json(err)
+//     }
+//     return res.status(500).json({ data: 'Server Internal error 🤯', isLogin: false })
+//     console.log(err.message);
+
+// })
+
 // START SERVER
+
 app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
