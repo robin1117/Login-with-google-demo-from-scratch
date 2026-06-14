@@ -1,11 +1,12 @@
 let button = document.querySelector("button");
 
-const clientId = "475216737217-nv9trlpu0q8qliqnp29kbjne3iupulva.apps.googleusercontent.com";
-const redirectUrl = "http://127.0.0.1:3000/get-code";
+// const clientId = "475216737217-nv9trlpu0q8qliqnp29kbjne3iupulva.apps.googleusercontent.com";
+// const redirectUrl = "http://127.0.0.1:3000/get-code";
 
 button.addEventListener("click", (event) => {
     window.open(
-        `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${clientId}&scope=openid email profile&redirect_uri=${redirectUrl}`,
+        `http://127.0.0.1:3000/auth/google`,
+        // `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${clientId}&scope=openid email profile&redirect_uri=${redirectUrl}`,
         "loginPopup",
         "width=500 height=500",
     );
