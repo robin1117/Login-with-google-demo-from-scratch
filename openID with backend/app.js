@@ -99,8 +99,8 @@ app.get("/set-session-cookie", (req, res) => {
   res.end();
 });
 
-app.use((err, req, res,next)=>{
-  res.json({msg:'something went wrong'})
+app.use((err, req, res, next) => {
+  res.json({ msg: 'something went wrong' })
 })
 
 
