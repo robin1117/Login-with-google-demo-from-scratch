@@ -1,5 +1,7 @@
 console.log('login with google loaded');
-import VrifiyToken from "./customTokenVerificationLogic.js";
+import { OAuth2Client } from "google-auth-library";
+// import VrifiyToken from "./customTokenVerificationLogic.js";
+let client = new OAuth2Client()
 
 export async function loginWithGoogle(code) {
     try {
@@ -26,14 +28,11 @@ export async function loginWithGoogle(code) {
         }
         // console.log(data.id_token);
 
-        // const userToken = data.id_token.split(".")[1]
-        // const userData = JSON.parse(atob(userToken));
-
-        let dataAfterVerifiyFromToken = await VrifiyToken(data.id_token)
-
-        if (dataAfterVerifiyFromToken) {
-            return dataAfterVerifiyFromToken
-        }
+        let loginTicket = await client.verifyIdToken({
+            idToken: data.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        })
+        return loginTicket.payload
 
     } catch (error) {
         console.log('Error From loginWithGoogle :', error.message);

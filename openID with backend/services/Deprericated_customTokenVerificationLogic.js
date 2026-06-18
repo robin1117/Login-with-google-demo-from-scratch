@@ -6,7 +6,7 @@ import { TOKEN,PUBLICKEY } from "../Trying to understand how Token Verification 
 export default async function verifyIdToken(idToken) {
     try {
         const header = JSON.parse(atob(idToken.split(".")[0])) //Extracting Header from, JWT token
-        const cliendId = JSON.parse(atob(idToken.split(".")[1])).aud
+        const cliendId = process.env.GOOGLE_CLIENT_ID
 
         const res = await fetch("https://www.googleapis.com/oauth2/v3/certs")
         const data = await res.json()
