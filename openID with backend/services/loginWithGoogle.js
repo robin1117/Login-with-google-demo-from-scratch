@@ -15,7 +15,7 @@ export function generateAuthUrl(params) {
     let generatedUri = client.generateAuthUrl({
         scope: ['profile', 'openid', 'email'],
         access_type: "offline",
-        // prompt: "consent",
+        prompt: "consent",
         state: "Random Key Sting Added to Url"
     })
     return generatedUri;
@@ -26,7 +26,8 @@ export async function loginWithGoogle(code) {
 
         let result = await client.getToken(code)
         let data = result.tokens
-
+        console.log(data);
+        
         if (data.error) {
             console.log('Error From loginWithGoogle :', data.error);
             return;

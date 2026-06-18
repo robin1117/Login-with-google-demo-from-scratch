@@ -61,6 +61,15 @@ app.get("/get-code", async (req, res) => {
   res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`);
 });
 
+app.get("/set-session-cookie", (req, res) => {
+  let { sid } = req.query;
+  res.cookie("sid", sid, {
+    maxAge: 1000 * 60 * 60 * 24,
+    httpOnly: true,
+  });
+  res.end();
+});
+
 app.get("/profile", (req, res, next) => {
   let { sid } = req.cookies;
   if (!sid) {
@@ -90,15 +99,8 @@ app.post("/logout", async (req, res, next) => {
 });
 
 
-app.get("/set-session-cookie", (req, res) => {
-  let { sid } = req.query;
-  res.cookie("sid", sid, {
-    maxAge: 1000 * 60 * 60 * 24,
-    httpOnly: true,
-  });
-  res.end();
-});
 
+//Error Handleding
 app.use((err, req, res, next) => {
   res.json({ msg: 'something went wrong' })
 })
