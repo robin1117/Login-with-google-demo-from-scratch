@@ -1,30 +1,31 @@
-console.log('login with google loaded');
 import { OAuth2Client } from "google-auth-library";
 // import VrifiyToken from "./customTokenVerificationLogic.js";
 
+const clientId = process.env.GOOGLE_CLIENT_ID;
+const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const redirectUrl = process.env.GOOGLE_REDIRECT_URI;
+
+let client = new OAuth2Client({
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirectUri: redirectUrl
+})
+
+export function generateAuthUrl(params) {
+    let generatedUri = client.generateAuthUrl({
+        scope: ['profile', 'openid', 'email'],
+        access_type: "offline",
+        // prompt: "consent",
+        state: "Random Key Sting Added to Url"
+    })
+    return generatedUri;
+}
 
 export async function loginWithGoogle(code) {
     try {
-        const clientId = process.env.GOOGLE_CLIENT_ID;
-        const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-        const redirectUrl = process.env.GOOGLE_REDIRECT_URI;
-        let client = new OAuth2Client({
-            client_id: clientId,
-            client_secret: clientSecret,
-            redirectUri: redirectUrl
-        })
+
         let result = await client.getToken(code)
         let data = result.tokens
-
-        // const payload = `code=${code}&client_id=${clientId}&client_secret=${clientSecret}&redirect_uri=${redirectUrl}&grant_type=authorization_code`;
-        // const response = await fetch("https://oauth2.googleapis.com/token", {
-        //     method: "POST",
-        //     headers: {
-        //         "Content-Type": "application/x-www-form-urlencoded",
-        //     },
-        //     body: payload,
-        // });
-        // const data = await response.json();
 
         if (data.error) {
             console.log('Error From loginWithGoogle :', data.error);
