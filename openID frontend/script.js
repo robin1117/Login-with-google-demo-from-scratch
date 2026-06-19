@@ -13,8 +13,19 @@ button.addEventListener("click", (event) => {
 });
 
 window.addEventListener("message", async (e) => {
-    let { data, isLogin } = e.data
+    let { isLogin } = e.data
+    console.log(e.data);
     if (isLogin) {
+        console.log('profile pay jao');
         window.location = '/profile'
+    }
+    else {
+        console.log('Home pay jao')
+        let p = document.createElement('p')
+        p.innerText = 'Something Went Wrong'
+        document.body.appendChild(p);
+        setTimeout(() => {
+            p.remove()
+        }, 2000)
     }
 });

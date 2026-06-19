@@ -1,13 +1,18 @@
+import "./Passport Library/passport.js";
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { generateAuthUrl, loginWithGoogle } from "./services/loginWithGoogle.js";
+// import {
+//   generateAuthUrl,
+//   loginWithGoogle,
+// } from "./services/loginWithGoogle.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
 import userDB from "./userDB.json" with { type: "json" };
 import sessionDB from "./sessionDB.json" with { type: "json" };
 import fs from "node:fs/promises";
+import passport from "passport";
 
 app.use(express.json());
 app.use(cookieParser());
@@ -20,54 +25,123 @@ app.use(
 );
 
 //Generating Url and Redirecting to it
-app.get("/auth/google", (req, res) => {
-  let googleAutherizationUrl = generateAuthUrl()
-  res.redirect(googleAutherizationUrl);
-});
+app.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["profile"],
+    prompt: "consent",
+    session: false,
+  }),
+);
+// ^
+// |
+// Replaced_With
+// app.get("/auth/google", (req, res) => {
+//   let googleAutherizationUrl = generateAuthUrl()
+//   res.redirect(googleAutherizationUrl);
+// });
 
 //Extract Auth code and Exchange for id_token and after interacting with DB make redirect() to /callback
-app.get("/get-code", async (req, res, next) => {
-  try {
-    let code = req.query.code;
-    let { sub, email, name, picture } = await loginWithGoogle(code);
+app.get(
+  "/get-code",
+  passport.authenticate("google", {
+    failureRedirect: "http://127.0.0.1:5500/callback.html?error=false",
+    session: false,
+  }),
+  async (req, res) => {
+    // console.log(req.user._json);
 
-    let existingSession = sessionDB.find(({ id, uid }) => uid == sub);
+    try {
+      let { sub, email, name, picture } = req.user._json;
+      let existingSession = sessionDB.find(({ id, uid }) => uid == sub);
+      if (existingSession) {
+        return res.redirect(
+          `http://127.0.0.1:5500/callback.html?sid=${existingSession.id}`,
+        );
+      }
 
-    if (existingSession) {
+      let existingUser = userDB.find(({ id }) => id === sub);
+      if (existingUser) {
+        let id = crypto.randomUUID();
+        sessionDB.push({ id, uid: sub });
+        await fs.writeFile(
+          "./sessionDB.json",
+          JSON.stringify(sessionDB, null, 2),
+        );
+        return res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`);
+      }
 
-      return res.redirect(
-        `http://127.0.0.1:5500/callback.html?sid=${existingSession.id}`,
-      );
-    }
+      let createdUser = { id: sub, email, name, picture };
+      userDB.push(createdUser);
+      await fs.writeFile("./userDB.json", JSON.stringify(userDB, null, 2));
 
-    let existingUser = userDB.find(({ id }) => id === sub);
-    if (existingUser) {
       let id = crypto.randomUUID();
-      sessionDB.push({ id, uid: sub });
-      await fs.writeFile("./sessionDB.json", JSON.stringify(sessionDB, null, 2));
-      return res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`);
+
+      let createdSession = { id, uid: sub };
+      sessionDB.push(createdSession);
+      await fs.writeFile(
+        "./sessionDB.json",
+        JSON.stringify(sessionDB, null, 2),
+      );
+
+      res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`);
+    } catch (error) {
+      res.redirect(`http://127.0.0.1:5500/callback.html?error=true`);
+      console.log("Error From getCode :", error.message);
+      next(error);
     }
+  },
+);
+// ^
+// |
+// Replaced_With
+// app.get("/get-code", async (req, res, next) => {
+//   try {
+//     let code = req.query.code;
+//     if (code) {
 
-    let createdUser = { id: sub, email, name, picture };
-    userDB.push(createdUser);
-    await fs.writeFile("./userDB.json", JSON.stringify(userDB, null, 2));
+//     }
+//     let { sub, email, name, picture } = await loginWithGoogle(code);
 
-    let id = crypto.randomUUID();
+//     let existingSession = sessionDB.find(({ id, uid }) => uid == sub);
 
-    let createdSession = { id, uid: sub };
-    sessionDB.push(createdSession);
-    await fs.writeFile("./sessionDB.json", JSON.stringify(sessionDB, null, 2));
+//     if (existingSession) {
 
+//       return res.redirect(
+//         `http://127.0.0.1:5500/callback.html?sid=${existingSession.id}`,
+//       );
+//     }
 
-    res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`);
-  } catch (error) {
-    console.log('Error From getCode :', error.message);
-    next(error)
-  }
+//     let existingUser = userDB.find(({ id }) => id === sub);
+//     if (existingUser) {
+//       let id = crypto.randomUUID();
+//       sessionDB.push({ id, uid: sub });
+//       await fs.writeFile("./sessionDB.json", JSON.stringify(sessionDB, null, 2));
+//       return res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`);
+//     }
 
-});
+//     let createdUser = { id: sub, email, name, picture };
+//     userDB.push(createdUser);
+//     await fs.writeFile("./userDB.json", JSON.stringify(userDB, null, 2));
+
+//     let id = crypto.randomUUID();
+
+//     let createdSession = { id, uid: sub };
+//     sessionDB.push(createdSession);
+//     await fs.writeFile("./sessionDB.json", JSON.stringify(sessionDB, null, 2));
+
+//     res.redirect(`http://127.0.0.1:5500/callback.html?sid=${id}`);
+
+//   } catch (error) {
+//     res.redirect(`http://127.0.0.1:5500/callback.html?error=true`);
+//     console.log('Error From getCode :', error.message);
+//     next(error)
+//   }
+
+// });
 
 //Setting sid Cookies to browser side.
+
 app.get("/set-session-cookie", (req, res) => {
   let { sid } = req.query;
   res.cookie("sid", sid, {
@@ -105,13 +179,10 @@ app.post("/logout", async (req, res, next) => {
   }
 });
 
-
-
 //Error Handleding
 app.use((err, req, res, next) => {
-  res.json({ msg: 'something went wrong' })
-})
-
+  res.json({ msg: "something went wrong", err });
+});
 
 app.listen(PORT, () => {
   console.log(
